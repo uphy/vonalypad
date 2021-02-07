@@ -19,6 +19,7 @@ func New(storage *recipe.RecipeStorage, staticDir string) *API {
 	app := echo.New()
 	a := &API{storage, app}
 	app.GET("/api/search", a.Search)
+	app.GET("/api/random", a.SearchRandom)
 	app.Static("/", staticDir)
 	return &API{storage, app}
 }
@@ -35,6 +36,14 @@ func (a *API) Search(ctx echo.Context) error {
 	sort.Slice(result, func(i, j int) bool {
 		return result[i].Tsukurepo > result[j].Tsukurepo
 	})
+	return ctx.JSON(200, result)
+}
+
+func (a *API) SearchRandom(ctx echo.Context) error {
+	result, err := a.storage.Random(100)
+	if err != nil {
+		return echo.NewHTTPError(500, fmt.Errorf("failed to search random: %w", err))
+	}
 	return ctx.JSON(200, result)
 }
 

@@ -3,6 +3,8 @@ package recipe
 import (
 	"encoding/json"
 	"io/ioutil"
+	"math"
+	"math/rand"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -45,7 +47,8 @@ type (
 		Image string `json:"image"`
 	}
 	RecipeStorage struct {
-		Dir string
+		Dir     string
+		Recipes []Recipe
 	}
 	RecipeQuery struct {
 		Category string
@@ -54,7 +57,7 @@ type (
 )
 
 func NewStorage(dir string) *RecipeStorage {
-	return &RecipeStorage{dir}
+	return &RecipeStorage{dir, nil}
 }
 
 func (s *RecipeStorage) Find(query *RecipeQuery) ([]Recipe, error) {
@@ -67,6 +70,24 @@ func (s *RecipeStorage) Find(query *RecipeQuery) ([]Recipe, error) {
 		if query.Matches(&recipe) {
 			result = append(result, recipe)
 		}
+	}
+	return result, nil
+}
+
+func (s *RecipeStorage) Random(count int) ([]Recipe, error) {
+	recipes, err := s.load()
+	if err != nil {
+		return nil, err
+	}
+	c := make([]Recipe, len(recipes))
+	copy(c, recipes)
+	result := make([]Recipe, int(math.Min(float64(count), float64(len(c)))))
+	r := rand.New(rand.NewSource(time.Now().Unix()))
+	for i := 0; i < count; i++ {
+		index := r.Intn(len(c))
+		result[i] = c[index]
+		// delete appended element.
+		c = append(c[:index], c[index+1:]...)
 	}
 	return result, nil
 }
@@ -106,6 +127,9 @@ func (q *RecipeQuery) Matches(r *Recipe) bool {
 }
 
 func (s *RecipeStorage) load() ([]Recipe, error) {
+	if len(s.Recipes) > 0 {
+		return s.Recipes, nil
+	}
 	files, err := ioutil.ReadDir(s.Dir)
 	if err != nil {
 		return nil, err
@@ -121,6 +145,7 @@ func (s *RecipeStorage) load() ([]Recipe, error) {
 		}
 		recipes = append(recipes, *r)
 	}
+	s.Recipes = recipes
 	return recipes, nil
 }
 

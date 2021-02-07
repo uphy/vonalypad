@@ -7,7 +7,14 @@
     <input
       type="submit"
       value="Search"
+      placeholder="Keyword"
       @click="search"
+    >
+    <input
+      type="submit"
+      value="Random"
+      style="margin-left: 0.5rem"
+      @click="random"
     >
     <div class="recipes">
       <div
@@ -77,7 +84,7 @@ export default {
   data() {
     const state = reactive({
       recipes: [],
-      query: "鶏肉",
+      query: "",
     });
     return {
       state,
@@ -89,6 +96,10 @@ export default {
         });
         state.recipes = resp.data;
       },
+      random: async()=>{
+        const resp = await axios.get("./api/random");
+        state.recipes = resp.data;
+      }
     };
   },
 };
