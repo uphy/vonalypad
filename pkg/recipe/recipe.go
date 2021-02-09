@@ -2,6 +2,7 @@ package recipe
 
 import (
 	"encoding/json"
+	"errors"
 	"io/ioutil"
 	"math"
 	"math/rand"
@@ -56,6 +57,10 @@ type (
 	}
 )
 
+var (
+	ErrNotFound = errors.New("not found")
+)
+
 func NewStorage(dir string) *RecipeStorage {
 	return &RecipeStorage{dir, nil}
 }
@@ -72,6 +77,19 @@ func (s *RecipeStorage) Find(query *RecipeQuery) ([]Recipe, error) {
 		}
 	}
 	return result, nil
+}
+
+func (s *RecipeStorage) FindByID(id string) (*Recipe, error) {
+	recipes, err := s.load()
+	if err != nil {
+		return nil, err
+	}
+	for _, recipe := range recipes {
+		if recipe.ID == id {
+			return &recipe, nil
+		}
+	}
+	return nil, ErrNotFound
 }
 
 func (s *RecipeStorage) Random(count int) ([]Recipe, error) {

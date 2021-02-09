@@ -36,72 +36,11 @@
         </v-card>
       </v-col>
     </v-row>
-    <v-dialog
-      v-model="dialog"
-      fullscreen
-      hide-overlay
-      transition="dialog-bottom-transition"
-      v-if="recipe"
-    >
-      <template v-slot:activator="{ on, attrs }">
-        <v-btn
-          color="red lighten-2"
-          dark
-          v-bind="attrs"
-          v-on="on"
-        >
-          Click Me
-        </v-btn>
-      </template>
-
-      <v-card>
-        <v-card-title class="headline grey lighten-2">
-          {{ recipe.title}}
-          <v-spacer></v-spacer>
-          <v-btn @click="close">
-            <v-icon>mdi-close</v-icon>
-          </v-btn>
-        </v-card-title>
-
-        <v-card-text>
-          {{ recipe.description }}
-        </v-card-text>
-
-        <v-divider></v-divider>
-        <div style="padding: 1rem">
-          <ul>
-            <li
-              v-for="(ingredient, i) in recipe.ingredients"
-              :key="i"
-            >{{ ingredient. name}}: {{ ingredient.quantity }}</li>
-          </ul>
-        </div>
-
-        <v-divider></v-divider>
-        <div style="padding: 1rem">
-          <ol>
-            <li
-              v-for="(step, i) in recipe.steps"
-              :key="i"
-            >{{ step.step}}
-              <v-img
-                v-if="step.image"
-                :src="step.image"
-                max-width="300px"
-              />
-            </li>
-          </ol>
-        </div>
-      </v-card>
-    </v-dialog>
   </div>
 </template>
 
 <script>
 import axios from "axios";
-import NoSleep from "nosleep.js";
-
-const noSleep = new NoSleep();
 
 export default {
   data: () => {
@@ -109,7 +48,6 @@ export default {
       query: "",
       recipes: [],
       recipe: null,
-      dialog: false,
     };
   },
   mounted() {
@@ -135,14 +73,7 @@ export default {
       return recipe;
     },
     show(recipe) {
-      this.recipe = recipe;
-      this.dialog = true;
-      noSleep.enable();
-    },
-    close() {
-      noSleep.disable();
-      this.dialog = false;
-      this.recipe = null;
+      this.$router.push(`/recipes/${recipe.id}`);
     },
   },
 };
