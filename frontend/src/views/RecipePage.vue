@@ -27,7 +27,7 @@
       <v-tabs v-model="tab">
         <v-tabs-slider></v-tabs-slider>
         <v-tab>Overview</v-tab>
-        <v-tab>Steps</v-tab>
+        <v-tab @click="setStep(1)">Steps</v-tab>
       </v-tabs>
 
       <div style="padding: 1rem">
@@ -152,6 +152,21 @@ class VoiceControl {
   }
 }
 
+class TextToSpeech {
+  constructor() {
+    this.speechSynthesis = window.speechSynthesis;
+  }
+
+  speak(text) {
+    if (this.speechSynthesis === null || this.speechSynthesis === undefined) {
+      return;
+    }
+    this.speechSynthesis.cancel();
+    const uttr = new SpeechSynthesisUtterance(text);
+    this.speechSynthesis.speak(uttr);
+  }
+}
+
 export default {
   data: () => {
     return {
@@ -161,6 +176,7 @@ export default {
       step: 1,
       currentStep: null,
       voiceControl: null,
+      textToSpeech: null,
       debug: false,
       recognitionTexts: [],
     };
@@ -176,10 +192,12 @@ export default {
         }
         switch (transcript) {
           case "次":
-            this.nextStep();
+          case "次次":
+            this.step = Math.min(this.step + 1, this.recipe.steps.length);
             break;
           case "前":
-            this.prevStep();
+          case "前前":
+            this.step = Math.max(this.step - 1, 1);
             break;
           case "最初":
             this.step = 1;
@@ -195,6 +213,7 @@ export default {
         }
       }
     );
+    this.textToSpeech = new TextToSpeech();
     const recipeId = this.$route.params["recipeId"];
     const resp = await axios.get(`./api/recipes/${recipeId}`);
     this.recipe = resp.data;
@@ -213,15 +232,14 @@ export default {
   },
   watch: {
     step() {
-      this.currentStep = this.recipe.steps[this.step - 1];
+      this.setStep(this.step);
     },
   },
   methods: {
-    nextStep() {
-      this.step = Math.min(this.step + 1, this.recipe.steps.length);
-    },
-    prevStep() {
-      this.step = Math.max(this.step - 1, 1);
+    setStep(step) {
+      this.currentStep = this.recipe.steps[step - 1];
+      this.textToSpeech.speak(this.currentStep.step);
+      this.step = step;
     },
   },
 };
