@@ -83,6 +83,8 @@ const noSleep = new NoSleep();
 
 class VoiceControl {
   constructor(onVoice, print) {
+    this.stopping = true;
+
     const SpeechRecognition =
       window.webkitSpeechRecognition || window.SpeechRecognition;
     if (SpeechRecognition === null || SpeechRecognition === undefined) {
@@ -90,7 +92,6 @@ class VoiceControl {
       return;
     }
     this.recognition = new SpeechRecognition();
-    this.recognition.continuous = true;
     this.recognition.lang = "ja-JP";
 
     this.recognition.onresult = (event) => {
@@ -109,6 +110,10 @@ class VoiceControl {
     };
     this.recognition.onend = () => {
       print("onEnd");
+      if (!this.stopping) {
+        print("restarting");
+        this.start();
+      }
     };
     this.recognition.onaudioend = () => {
       print("onAudioEnd");
@@ -134,6 +139,7 @@ class VoiceControl {
     if (this.recognition === null) {
       return;
     }
+    this.stopping = false;
     this.recognition.start();
   }
 
@@ -141,6 +147,7 @@ class VoiceControl {
     if (this.recognition === null) {
       return;
     }
+    this.stopping = true;
     this.recognition.stop();
   }
 }
