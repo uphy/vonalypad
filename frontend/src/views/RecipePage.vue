@@ -187,24 +187,30 @@ export default {
     }
     this.voiceControl = new VoiceControl(
       (transcript) => {
+        transcript = transcript.toLowerCase();
         if (this.debug) {
           this.recognitionTexts.push(transcript);
         }
-        switch (transcript) {
-          case "次":
-          case "次次":
-            this.step = Math.min(this.step + 1, this.recipe.steps.length);
-            break;
-          case "前":
-          case "前前":
-            this.step = Math.max(this.step - 1, 1);
-            break;
-          case "最初":
-            this.step = 1;
-            break;
-          case "最後":
-            this.step = this.recipe.steps.length;
-            break;
+        if (transcript.includes("次") || transcript.includes("next")) {
+          this.step = Math.min(this.step + 1, this.recipe.steps.length);
+        } else if (
+          transcript.includes("前") ||
+          transcript.includes("プレビアス") ||
+          transcript.includes("previous")
+        ) {
+          this.step = Math.max(this.step - 1, 1);
+        } else if (
+          transcript.includes("最初") ||
+          transcript.includes("first") ||
+          transcript.includes("ファースト")
+        ) {
+          this.step = 1;
+        } else if (
+          transcript.includes("最後") ||
+          transcript.includes("last") ||
+          transcript.includes("ラスト")
+        ) {
+          this.step = this.recipe.steps.length;
         }
       },
       (text) => {
