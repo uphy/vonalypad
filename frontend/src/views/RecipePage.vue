@@ -82,7 +82,7 @@ import NoSleep from "nosleep.js";
 const noSleep = new NoSleep();
 
 class VoiceControl {
-  constructor(onVoice) {
+  constructor(onVoice, print) {
     const SpeechRecognition =
       window.webkitSpeechRecognition || window.SpeechRecognition;
     if (SpeechRecognition === null || SpeechRecognition === undefined) {
@@ -94,13 +94,39 @@ class VoiceControl {
     this.recognition.lang = "ja-JP";
 
     this.recognition.onresult = (event) => {
+      print("onResult");
       const results = event.results;
       if (results.length > 0) {
         const result = results[results.length - 1];
         if (result.length > 0) {
-          onVoice(result[0].transcript);
+          try {
+            onVoice(result[0].transcript);
+          } catch (e) {
+            console.log(e);
+          }
         }
       }
+    };
+    this.recognition.onend = () => {
+      print("onEnd");
+    };
+    this.recognition.onaudioend = () => {
+      print("onAudioEnd");
+    };
+    this.recognition.onnomatch = () => {
+      print("onNoMatch");
+    };
+    this.recognition.onsoundstart = () => {
+      print("onSoundStart");
+    };
+    this.recognition.onsoundend = () => {
+      print("onSoundEnd");
+    };
+    this.recognition.onspeechstart = () => {
+      print("onSpeechStart");
+    };
+    this.recognition.onspeechend = () => {
+      print("onSpeechEnd");
     };
   }
 
@@ -136,25 +162,32 @@ export default {
     if (this.$route.query["debug"] === "true") {
       this.debug = true;
     }
-    this.voiceControl = new VoiceControl((transcript) => {
-      if (this.debug) {
-        this.recognitionTexts.push(transcript);
+    this.voiceControl = new VoiceControl(
+      (transcript) => {
+        if (this.debug) {
+          this.recognitionTexts.push(transcript);
+        }
+        switch (transcript) {
+          case "次":
+            this.nextStep();
+            break;
+          case "前":
+            this.prevStep();
+            break;
+          case "最初":
+            this.step = 1;
+            break;
+          case "最後":
+            this.step = this.recipe.steps.length;
+            break;
+        }
+      },
+      (text) => {
+        if (this.debug) {
+          this.recognitionTexts.push(text);
+        }
       }
-      switch (transcript) {
-        case "次":
-          this.nextStep();
-          break;
-        case "前":
-          this.prevStep();
-          break;
-        case "最初":
-          this.step = 1;
-          break;
-        case "最後":
-          this.step = this.recipe.steps.length;
-          break;
-      }
-    });
+    );
     const recipeId = this.$route.params["recipeId"];
     const resp = await axios.get(`./api/recipes/${recipeId}`);
     this.recipe = resp.data;
