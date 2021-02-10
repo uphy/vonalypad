@@ -64,6 +64,14 @@
         </v-tabs-items>
       </div>
     </v-card>
+    <div v-if="recognitionTexts.length > 0">
+      <ul>
+        <li
+          v-for="(t,i) in recognitionTexts"
+          :key="i"
+        >{{ t }}</li>
+      </ul>
+    </div>
   </div>
 </template>
 
@@ -87,7 +95,12 @@ class VoiceControl {
 
     this.recognition.onresult = (event) => {
       const results = event.results;
-      onVoice(results[results.length - 1][0].transcript);
+      if (results.length > 0) {
+        const result = results[results.length - 1];
+        if (result.length > 0) {
+          onVoice(result[0].transcript);
+        }
+      }
     };
   }
 
@@ -115,10 +128,18 @@ export default {
       step: 1,
       currentStep: null,
       voiceControl: null,
+      debug: false,
+      recognitionTexts: [],
     };
   },
   async mounted() {
+    if (this.$route.query["debug"] === "true") {
+      this.debug = true;
+    }
     this.voiceControl = new VoiceControl((transcript) => {
+      if (this.debug) {
+        this.recognitionTexts.push(transcript);
+      }
       switch (transcript) {
         case "次":
           this.nextStep();
