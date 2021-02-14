@@ -2,7 +2,7 @@
   <v-app>
     <v-app-bar app>
       <v-app-bar-nav-icon @click="drawer = !drawer"></v-app-bar-nav-icon>
-      <v-toolbar-title>Vonalypad</v-toolbar-title>
+      <v-toolbar-title @click="$router.push('/')" style="cursor:pointer;">Vonalypad</v-toolbar-title>
     </v-app-bar>
 
     <v-navigation-drawer

@@ -228,7 +228,7 @@ func parseRecipeHTML(file string) (*Recipe, error) {
 		})
 	})
 	var steps []Step
-	doc.Find("div.step dd").Each(func(i int, s *goquery.Selection) {
+	doc.Find("#steps>div[data-position] dd").Each(func(i int, s *goquery.Selection) {
 		step := trim(s.Text())
 		image, _ := s.Find(".instruction img").Attr("src")
 		steps = append(steps, Step{

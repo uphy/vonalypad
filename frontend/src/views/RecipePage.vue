@@ -15,53 +15,35 @@
 
       <v-divider></v-divider>
       <div style="padding: 1rem">
-        <v-checkbox
-          v-for="(ingredient, i) in recipe.ingredients"
-          :key="i"
-          :label="`${ingredient.name}: ${ingredient.quantity}`"
-          dense
-        ></v-checkbox>
+        <span>分量: {{ recipe.servingsFor }}</span>
+        <div id="ingredients">
+          <v-checkbox
+            v-for="(ingredient, i) in recipe.ingredients"
+            :key="i"
+            :label="`${ingredient.name}: ${ingredient.quantity}`"
+            dense
+          ></v-checkbox>
+        </div>
       </div>
 
       <v-divider></v-divider>
-      <v-tabs v-model="tab">
-        <v-tabs-slider></v-tabs-slider>
-        <v-tab>Overview</v-tab>
-        <v-tab @click="setStep(1)">Steps</v-tab>
-      </v-tabs>
 
       <div style="padding: 1rem">
-        <v-tabs-items v-model="tab">
-          <v-tab-item>
-            <ol>
-              <li
-                v-for="(step, i) in recipe.steps"
-                :key="i"
-                class="mb-8"
-              >{{ step.step}}
-                <v-img
-                  v-if="step.image"
-                  :src="step.image"
-                  max-width="300px"
-                />
-              </li>
-            </ol>
-          </v-tab-item>
-          <v-tab-item>
-            <div class="text-center">
-              <v-pagination
-                v-model="step"
-                :length="recipe.steps.length"
-              ></v-pagination>
-            </div>
-            <div>{{ currentStep.step }}</div>
+        <ol>
+          <li
+            v-for="(s, i) in recipe.steps"
+            :key="i"
+            class="mb-8"
+            :id="`step-${i+1}`"
+          >
+            <span :style="{'background-color':step-1 === i ? '#ffa':null}">{{ s.step}}</span>
             <v-img
-              v-if="currentStep.image"
-              :src="currentStep.image"
+              v-if="s.image"
+              :src="s.image"
               max-width="300px"
             />
-          </v-tab-item>
-        </v-tabs-items>
+          </li>
+        </ol>
       </div>
     </v-card>
     <div v-if="recognitionTexts.length > 0">
@@ -155,10 +137,14 @@ class VoiceControl {
 class TextToSpeech {
   constructor() {
     this.speechSynthesis = window.speechSynthesis;
+    this.enable = true;
   }
 
   speak(text) {
     if (this.speechSynthesis === null || this.speechSynthesis === undefined) {
+      return;
+    }
+    if (!this.enable) {
       return;
     }
     this.speechSynthesis.cancel();
@@ -211,6 +197,18 @@ export default {
           transcript.includes("ラスト")
         ) {
           this.step = this.recipe.steps.length;
+        } else if (
+          transcript.includes("材料") ||
+          transcript.includes("調味料")
+        ) {
+          this.focusElement("ingredients");
+        } else if (
+          transcript.includes("戻る") ||
+          transcript.includes("手順") ||
+          transcript.includes("現在") ||
+          transcript.includes("今")
+        ) {
+          this.focusStep(this.step);
         }
       },
       (text) => {
@@ -220,6 +218,7 @@ export default {
       }
     );
     this.textToSpeech = new TextToSpeech();
+    this.textToSpeech.enable = false;
     const recipeId = this.$route.params["recipeId"];
     const resp = await axios.get(`./api/recipes/${recipeId}`);
     this.recipe = resp.data;
@@ -246,6 +245,17 @@ export default {
       this.currentStep = this.recipe.steps[step - 1];
       this.textToSpeech.speak(this.currentStep.step);
       this.step = step;
+      this.focusStep(step);
+    },
+    focusStep(step) {
+      this.focusElement(`step-${step}`);
+    },
+    focusElement(elm) {
+      document.getElementById(elm).scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+        inline: "start",
+      });
     },
   },
 };
