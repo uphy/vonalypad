@@ -60,6 +60,19 @@
         </ol>
       </div>
     </v-card>
+    <div style="margin-top: 4rem;"></div>
+    <v-btn
+      color="green"
+      fab
+      large
+      dark
+      bottom
+      right
+      fixed
+      @click="nextStep"
+    >
+      <v-icon>mdi-arrow-right-bold</v-icon>
+    </v-btn>
     <div v-if="recognitionTexts.length > 0">
       <ul>
         <li
@@ -192,7 +205,7 @@ export default {
           this.recognitionTexts.push(transcript);
         }
         if (transcript.includes("次") || transcript.includes("next")) {
-          this.step = Math.min(this.step + 1, this.recipe.steps.length);
+          this.nextStep();
         } else if (
           transcript.includes("前") ||
           transcript.includes("プレビアス") ||
@@ -255,6 +268,9 @@ export default {
     },
   },
   methods: {
+    nextStep() {
+      this.step = Math.min(this.step + 1, this.recipe.steps.length);
+    },
     setStep(step) {
       this.currentStep = this.recipe.steps[step - 1];
       this.textToSpeech.speak(this.currentStep.step);
