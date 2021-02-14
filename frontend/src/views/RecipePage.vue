@@ -10,7 +10,21 @@
       </v-img>
 
       <v-card-text>
-        {{ recipe.description }}
+        <div>{{ recipe.description }}</div>
+        <v-btn
+          color="#ff9933"
+          class="ma-2 white--text"
+          small
+          @click="openInCookpad"
+        >
+          Cookpad
+          <v-icon
+            right
+            dark
+          >
+            mdi-open-in-new
+          </v-icon>
+        </v-btn>
       </v-card-text>
 
       <v-divider></v-divider>
@@ -256,6 +270,9 @@ export default {
         block: "center",
         inline: "start",
       });
+    },
+    openInCookpad() {
+      window.open(`https://cookpad.com/recipe/${this.recipe.id}`, "_blank");
     },
   },
 };
