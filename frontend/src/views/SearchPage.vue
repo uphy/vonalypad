@@ -42,6 +42,8 @@
 <script>
 import axios from "axios";
 
+let randomRecipes = null;
+
 export default {
   data: () => {
     return {
@@ -50,8 +52,11 @@ export default {
       recipe: null,
     };
   },
-  mounted() {
-    this.random();
+  async mounted() {
+    if (randomRecipes === null) {
+      randomRecipes = await this.random();
+    }
+    this.recipes = randomRecipes;
   },
   methods: {
     async search() {
@@ -64,7 +69,7 @@ export default {
     },
     async random() {
       const resp = await axios.get("./api/random");
-      this.recipes = this.filterRecipe(resp.data);
+      return this.filterRecipe(resp.data);
     },
     filterRecipe(recipe) {
       recipe.forEach((recipe) => {
