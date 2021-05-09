@@ -11,18 +11,22 @@ import (
 )
 
 type API struct {
-	storage *recipe.RecipeStorage
-	app     *echo.Echo
+	storage    *recipe.RecipeStorage
+	tagStorage *recipe.TagStorage
+	app        *echo.Echo
 }
 
-func New(storage *recipe.RecipeStorage, staticDir string) *API {
+func New(storage *recipe.RecipeStorage, tagStorage *recipe.TagStorage, staticDir string) *API {
 	app := echo.New()
-	a := &API{storage, app}
+	a := &API{storage, tagStorage, app}
 	app.GET("/api/search", a.Search)
 	app.GET("/api/random", a.SearchRandom)
 	app.GET("/api/recipes/:id", a.Get)
+	app.GET("/api/recipes/:id/tags", a.GetTagsByRecipeID)
+	app.PUT("/api/recipes/:id/tags", a.UpdateTagsByRecipeID)
+	app.GET("/api/tags/", a.GetTags)
 	app.Static("/", staticDir)
-	return &API{storage, app}
+	return &API{storage, tagStorage, app}
 }
 
 func (a *API) Get(ctx echo.Context) error {
@@ -35,6 +39,36 @@ func (a *API) Get(ctx echo.Context) error {
 		return err
 	}
 	return ctx.JSON(200, r)
+}
+
+func (a *API) GetTags(ctx echo.Context) error {
+	tags, err := a.tagStorage.Tags()
+	if err != nil {
+		return err
+	}
+	return ctx.JSON(200, tags)
+}
+
+func (a *API) GetTagsByRecipeID(ctx echo.Context) error {
+	id := ctx.Param("id")
+	tags, err := a.tagStorage.FindByRecipeID(id)
+	if err != nil {
+		return err
+	}
+	return ctx.JSON(200, tags)
+}
+
+func (a *API) UpdateTagsByRecipeID(ctx echo.Context) error {
+	var tagNames []string
+	if err := ctx.Bind(&tagNames); err != nil {
+		return err
+	}
+	id := ctx.Param("id")
+	err := a.tagStorage.SetRecipeTags(id, tagNames)
+	if err != nil {
+		return err
+	}
+	return ctx.NoContent(200)
 }
 
 func (a *API) Search(ctx echo.Context) error {

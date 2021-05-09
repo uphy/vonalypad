@@ -15,11 +15,12 @@ import (
 )
 
 type App struct {
-	storage *recipe.RecipeStorage
+	storage    *recipe.RecipeStorage
+	tagStorage *recipe.TagStorage
 }
 
 func main() {
-	a := &App{nil}
+	a := &App{nil, nil}
 	app := cli.NewApp()
 	app.Commands = []cli.Command{
 		a.parseRecipes(),
@@ -35,6 +36,7 @@ func main() {
 	app.Before = func(c *cli.Context) error {
 		recipeDir := c.String("recipe-dir")
 		a.storage = recipe.NewStorage(recipeDir)
+		a.tagStorage = recipe.NewTagStorage(filepath.Join(recipeDir, "tags.json"))
 		return nil
 	}
 	if err := app.Run(os.Args); err != nil {
@@ -53,7 +55,10 @@ func (a *App) startServer() cli.Command {
 		},
 		Action: func(c *cli.Context) error {
 			staticDir := c.String("static-dir")
-			api := api.New(a.storage, staticDir)
+			if err := a.tagStorage.Load(); err != nil {
+				return err
+			}
+			api := api.New(a.storage, a.tagStorage, staticDir)
 			return api.Start(8080)
 		},
 	}

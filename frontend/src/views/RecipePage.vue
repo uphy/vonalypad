@@ -25,6 +25,7 @@
             mdi-open-in-new
           </v-icon>
         </v-btn>
+        <tags :recipeId="recipe.id" />
       </v-card-text>
 
       <v-divider></v-divider>
@@ -87,6 +88,7 @@
 <script>
 import axios from "axios";
 import NoSleep from "nosleep.js";
+import Tags from "@/components/Tags.vue";
 
 const noSleep = new NoSleep();
 
@@ -181,6 +183,9 @@ class TextToSpeech {
 }
 
 export default {
+  components: {
+    Tags,
+  },
   data: () => {
     return {
       recipe: null,
@@ -192,6 +197,8 @@ export default {
       textToSpeech: null,
       debug: false,
       recognitionTexts: [],
+      tags: [],
+      allTags: [],
     };
   },
   async mounted() {
