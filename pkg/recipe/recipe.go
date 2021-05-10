@@ -154,7 +154,7 @@ func (s *RecipeStorage) load() ([]Recipe, error) {
 	}
 	var recipes []Recipe
 	for _, file := range files {
-		if file.Name() == ".DS_Store" {
+		if !file.IsDir() {
 			continue
 		}
 		r, err := s.loadFile(filepath.Join(s.Dir, file.Name(), "data.json"))

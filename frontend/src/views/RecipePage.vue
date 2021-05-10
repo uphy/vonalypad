@@ -6,7 +6,9 @@
         height="200px"
         :src="recipe.image"
       >
-        <v-card-title>{{ recipe.title}}</v-card-title>
+        <v-card-title>
+          <star :recipeId="recipe.id" />{{ recipe.title}}
+        </v-card-title>
       </v-img>
 
       <v-card-text>
@@ -89,6 +91,7 @@
 import axios from "axios";
 import NoSleep from "nosleep.js";
 import Tags from "@/components/Tags.vue";
+import Star from "@/components/Star.vue";
 
 const noSleep = new NoSleep();
 
@@ -185,6 +188,7 @@ class TextToSpeech {
 export default {
   components: {
     Tags,
+    Star,
   },
   data: () => {
     return {

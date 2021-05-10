@@ -7,6 +7,7 @@
     label="Tags"
     multiple
     solo
+    @change="updateTag"
   >
     <template v-slot:selection="{ attrs, item, select, selected }">
       <v-chip
@@ -64,7 +65,9 @@ export default {
       );
     },
     removeTag(item) {
-      console.log(`remove tag: ${item}`);
+      this.tags.splice(this.tags.indexOf(item), 1);
+      this.tags = [...this.tags];
+      this.updateTag();
     },
   },
 };

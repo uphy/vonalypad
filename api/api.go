@@ -16,6 +16,10 @@ type API struct {
 	app        *echo.Echo
 }
 
+type TagRequest struct {
+	Tag string `json:"tag"`
+}
+
 func New(storage *recipe.RecipeStorage, tagStorage *recipe.TagStorage, staticDir string) *API {
 	app := echo.New()
 	a := &API{storage, tagStorage, app}
@@ -24,7 +28,10 @@ func New(storage *recipe.RecipeStorage, tagStorage *recipe.TagStorage, staticDir
 	app.GET("/api/recipes/:id", a.Get)
 	app.GET("/api/recipes/:id/tags", a.GetTagsByRecipeID)
 	app.PUT("/api/recipes/:id/tags", a.UpdateTagsByRecipeID)
+	app.POST("/api/recipes/:id/add-tag", a.AddTag)
+	app.POST("/api/recipes/:id/remove-tag", a.RemoveTag)
 	app.GET("/api/tags/", a.GetTags)
+	app.GET("/api/tags/:id", a.GetRecipesByTagID)
 	app.Static("/", staticDir)
 	return &API{storage, tagStorage, app}
 }
@@ -58,6 +65,23 @@ func (a *API) GetTagsByRecipeID(ctx echo.Context) error {
 	return ctx.JSON(200, tags)
 }
 
+func (a *API) GetRecipesByTagID(ctx echo.Context) error {
+	id := ctx.Param("id")
+	tag, err := a.tagStorage.FindTagByTagID(id)
+	if err != nil {
+		return err
+	}
+	recipes := make([]*recipe.Recipe, len(tag.Recipes))
+	for i, recipeID := range tag.Recipes {
+		recipe, err := a.storage.FindByID(recipeID)
+		if err != nil {
+			return err
+		}
+		recipes[i] = recipe
+	}
+	return ctx.JSON(200, recipes)
+}
+
 func (a *API) UpdateTagsByRecipeID(ctx echo.Context) error {
 	var tagNames []string
 	if err := ctx.Bind(&tagNames); err != nil {
@@ -65,6 +89,35 @@ func (a *API) UpdateTagsByRecipeID(ctx echo.Context) error {
 	}
 	id := ctx.Param("id")
 	err := a.tagStorage.SetRecipeTags(id, tagNames)
+	if err != nil {
+		return err
+	}
+	return ctx.NoContent(200)
+}
+
+func (a *API) AddTag(ctx echo.Context) error {
+	recipeID := ctx.Param("id")
+	var tag TagRequest
+	if err := ctx.Bind(&tag); err != nil {
+		fmt.Println(err)
+		return err
+	}
+
+	err := a.tagStorage.AddRecipeTag(recipeID, tag.Tag)
+	if err != nil {
+		return err
+	}
+	return ctx.NoContent(200)
+}
+
+func (a *API) RemoveTag(ctx echo.Context) error {
+	recipeID := ctx.Param("id")
+	var tag TagRequest
+	if err := ctx.Bind(&tag); err != nil {
+		return err
+	}
+
+	err := a.tagStorage.RemoveRecipeTag(recipeID, tag.Tag)
 	if err != nil {
 		return err
 	}

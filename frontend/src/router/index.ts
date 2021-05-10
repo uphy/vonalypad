@@ -10,11 +10,18 @@ const routes: Array<RouteConfig> = [
     path: "/",
     name: "SearchPage",
     component: SearchPage,
+    props: route => ({ q: '' })
   },
   {
     path: "/recipes/:recipeId",
     name: "RecipePage",
     component: RecipePage,
+  },
+  {
+    path: "/tags/:q",
+    name: "SearchPage",
+    component: SearchPage,
+    props: route => ({ q: `tag:${route.params.q}` })
   }
 ];
 

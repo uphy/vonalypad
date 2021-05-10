@@ -2,7 +2,10 @@
   <v-app>
     <v-app-bar app>
       <v-app-bar-nav-icon @click="drawer = !drawer"></v-app-bar-nav-icon>
-      <v-toolbar-title @click="$router.push('/')" style="cursor:pointer;">Vonalypad</v-toolbar-title>
+      <v-toolbar-title
+        @click="$router.push('/')"
+        style="cursor:pointer;"
+      >Vonalypad</v-toolbar-title>
     </v-app-bar>
 
     <v-navigation-drawer
@@ -15,7 +18,7 @@
           v-for="link in links"
           :key="link.text"
           link
-           :to="link.link"
+          :to="link.link"
         >
           <v-list-item-icon>
             <v-icon>{{ link.icon }}</v-icon>
@@ -38,12 +41,22 @@
 
 <script lang="ts">
 import Vue from "vue";
+import axios from "axios";
 
 export default Vue.extend({
   name: "App",
   data: () => ({
     drawer: null,
-    links: [{ icon: "mdi-magnify", text: "Search", link: "/"}],
+    links: [{ icon: "mdi-magnify", text: "Search", link: "/" }],
   }),
+  async mounted() {
+    const links = [];
+    links.push({ icon: "mdi-magnify", text: "Search", link: "/" });
+    const tags = await axios.get("./api/tags/");
+    for (const tag of tags.data) {
+      links.push({ icon: "mdi-tag", text: tag.name, link: `/tags/${tag.id}` });
+    }
+    this.links = links;
+  },
 });
 </script>

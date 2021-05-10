@@ -9,7 +9,7 @@ import (
 )
 
 type (
-	Tags []Tag
+	Tags []*Tag
 
 	Tag struct {
 		Tag     TagInfo  `json:"tag"`
@@ -28,7 +28,7 @@ type (
 )
 
 func NewTagStorage(tagsFile string) *TagStorage {
-	return &TagStorage{tagsFile, []Tag{}}
+	return &TagStorage{tagsFile, []*Tag{}}
 }
 
 func (t *Tag) ContainsRecipe(recipeID string) (bool, error) {
@@ -62,6 +62,16 @@ func (t *Tag) RemoveRecipe(recipeID string) error {
 	return nil
 }
 
+func (t *TagStorage) RemoveTag(tagID string) error {
+	for i, tag := range t.tags {
+		if tag.Tag.ID == tagID {
+			t.tags = append(t.tags[:i], t.tags[i+1:]...)
+			return nil
+		}
+	}
+	return nil
+}
+
 func (t Tags) FindByRecipeID(recipeID string) ([]TagInfo, error) {
 	tags := make([]TagInfo, 0)
 	for _, tag := range t {
@@ -79,7 +89,21 @@ func (t Tags) FindByRecipeID(recipeID string) ([]TagInfo, error) {
 func (t Tags) FindByTagName(tagName string) (*Tag, error) {
 	for _, tag := range t {
 		if tag.Tag.Name == tagName {
-			return &tag, nil
+			return tag, nil
+		}
+	}
+	return nil, nil
+}
+
+func (t Tags) FindByTagID(tagID string) (*Tag, error) {
+	for _, tag := range t {
+		if tag.Tag.ID == tagID {
+			return tag, nil
+		}
+	}
+	for _, tag := range t {
+		if tag.Tag.Name == tagID {
+			return tag, nil
 		}
 	}
 	return nil, nil
@@ -103,7 +127,7 @@ func (t *TagStorage) NewTag(tagName string) (*Tag, error) {
 		},
 		Recipes: []string{},
 	}
-	t.tags = append(t.tags, newTag)
+	t.tags = append(t.tags, &newTag)
 	return &newTag, nil
 }
 
@@ -141,8 +165,8 @@ func (t *TagStorage) Save() error {
 
 func (t *TagStorage) Tags() ([]TagInfo, error) {
 	tagInfos := make([]TagInfo, len(t.tags))
-	for _, tag := range t.tags {
-		tagInfos = append(tagInfos, tag.Tag)
+	for i, tag := range t.tags {
+		tagInfos[i] = tag.Tag
 	}
 	return tagInfos, nil
 }
@@ -151,9 +175,16 @@ func (t *TagStorage) FindByRecipeID(recipeID string) ([]TagInfo, error) {
 	return t.tags.FindByRecipeID(recipeID)
 }
 
+func (t *TagStorage) FindTagByTagID(tagID string) (*Tag, error) {
+	return t.tags.FindByTagID(tagID)
+}
+
 func (t *TagStorage) SetRecipeTags(recipeID string, tagNames []string) error {
 	for _, tag := range t.tags {
 		tag.RemoveRecipe(recipeID)
+		if len(tag.Recipes) == 0 {
+			t.RemoveTag(tag.Tag.ID)
+		}
 	}
 	for _, tagName := range tagNames {
 		tag, err := t.tags.FindByTagName(tagName)
@@ -171,5 +202,32 @@ func (t *TagStorage) SetRecipeTags(recipeID string, tagNames []string) error {
 			return err
 		}
 	}
+	return t.Save()
+}
+
+func (t *TagStorage) AddRecipeTag(recipeID string, tagName string) error {
+	tag, err := t.FindTagByTagID(tagName)
+	if err != nil {
+		return err
+	}
+	if tag == nil {
+		if _, err := t.NewTag(tagName); err != nil {
+			return err
+		}
+		return nil
+	}
+	tag.AddRecipe(recipeID)
+	return t.Save()
+}
+
+func (t *TagStorage) RemoveRecipeTag(recipeID string, tagName string) error {
+	tag, err := t.FindTagByTagID(tagName)
+	if err != nil {
+		return err
+	}
+	if tag == nil {
+		return nil
+	}
+	tag.RemoveRecipe(recipeID)
 	return t.Save()
 }
