@@ -20,6 +20,10 @@ type TagRequest struct {
 	Tag string `json:"tag"`
 }
 
+type NoteRequest struct {
+	Note string `json:"note"`
+}
+
 func New(storage *recipe.RecipeStorage, tagStorage *recipe.TagStorage, staticDir string) *API {
 	app := echo.New()
 	a := &API{storage, tagStorage, app}
@@ -28,6 +32,8 @@ func New(storage *recipe.RecipeStorage, tagStorage *recipe.TagStorage, staticDir
 	app.GET("/api/recipes/:id", a.Get)
 	app.GET("/api/recipes/:id/tags", a.GetTagsByRecipeID)
 	app.PUT("/api/recipes/:id/tags", a.UpdateTagsByRecipeID)
+	app.GET("/api/recipes/:id/note", a.GetNote)
+	app.PUT("/api/recipes/:id/note", a.SetNote)
 	app.POST("/api/recipes/:id/add-tag", a.AddTag)
 	app.POST("/api/recipes/:id/remove-tag", a.RemoveTag)
 	app.GET("/api/tags/", a.GetTags)
@@ -46,6 +52,27 @@ func (a *API) Get(ctx echo.Context) error {
 		return err
 	}
 	return ctx.JSON(200, r)
+}
+
+func (a *API) SetNote(ctx echo.Context) error {
+	id := ctx.Param("id")
+	var req NoteRequest
+	if err := ctx.Bind(&req); err != nil {
+		return err
+	}
+	if err := a.storage.SetNote(id, req.Note); err != nil {
+		return err
+	}
+	return ctx.NoContent(200)
+}
+
+func (a *API) GetNote(ctx echo.Context) error {
+	id := ctx.Param("id")
+	note, err := a.storage.GetNote(id)
+	if err != nil {
+		return err
+	}
+	return ctx.String(200, note)
 }
 
 func (a *API) GetTags(ctx echo.Context) error {

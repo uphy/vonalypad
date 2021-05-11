@@ -28,6 +28,7 @@
           </v-icon>
         </v-btn>
         <tags :recipeId="recipe.id" />
+        <note :recipeId="recipe.id" />
       </v-card-text>
 
       <v-divider></v-divider>
@@ -92,6 +93,7 @@ import axios from "axios";
 import NoSleep from "nosleep.js";
 import Tags from "@/components/Tags.vue";
 import Star from "@/components/Star.vue";
+import Note from "@/components/Note.vue";
 
 const noSleep = new NoSleep();
 
@@ -189,6 +191,7 @@ export default {
   components: {
     Tags,
     Star,
+    Note,
   },
   data: () => {
     return {

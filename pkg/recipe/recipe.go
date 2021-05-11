@@ -202,6 +202,34 @@ func (s *RecipeStorage) ImportRecipeHTML(file string) error {
 	return nil
 }
 
+func (s *RecipeStorage) SetNote(recipeID string, note string) error {
+	noteFile, err := s.noteFile(recipeID)
+	if err != nil {
+		return err
+	}
+	return ioutil.WriteFile(noteFile, []byte(note), 0777)
+}
+
+func (s *RecipeStorage) noteFile(recipeID string) (string, error) {
+	noteFile := filepath.Join(s.Dir, recipeID, "note.md")
+	return noteFile, nil
+}
+
+func (s *RecipeStorage) GetNote(recipeID string) (string, error) {
+	noteFile, err := s.noteFile(recipeID)
+	if err != nil {
+		return "", err
+	}
+	if _, err := os.Stat(noteFile); os.IsNotExist(err) {
+		return "", nil
+	}
+	b, err := ioutil.ReadFile(noteFile)
+	if err != nil {
+		return "", err
+	}
+	return string(b), nil
+}
+
 func parseRecipeHTML(file string) (*Recipe, error) {
 	f, err := os.Open(file)
 	if err != nil {
