@@ -16,21 +16,17 @@
       </v-responsive>
     </v-container>
     <v-row>
-      <v-col
-        v-for="r in recipes"
-        :key="r.id"
-        cols="6"
-        md="3"
-      >
+      <div v-if="loading">
+        <v-progress-circular
+          indeterminate
+          color="primary"
+        ></v-progress-circular>
+      </div>
+      <v-col v-else v-for="r in recipes" :key="r.id" cols="6" md="3">
         <v-card @click="show(r)">
-          <v-img
-            :src="r.image"
-            width="100%"
-            aspect-ratio="1"
-          >
-          </v-img>
+          <v-img :src="r.image" width="100%" aspect-ratio="1"> </v-img>
           <v-card-title style="font-size: 0.8rem; line-height: 1rem">
-            {{r.title}}
+            {{ r.title }}
             <div>🍳{{ r.tsukurepo }}<span v-if="r.video"> 🎥</span></div>
           </v-card-title>
         </v-card>
@@ -53,6 +49,7 @@ export default {
       query: "",
       recipes: [],
       recipe: null,
+      loading: false,
     };
   },
   mounted() {
@@ -79,25 +76,40 @@ export default {
     async search() {
       if (this.query.startsWith("tag:")) {
         const tag = this.query.substring(this.query.indexOf(":") + 1);
-        const resp = await axios.get(`./api/tags/${tag}`, {
+        this.loading = true;
+        try {
+          const resp = await axios.get(`./api/tags/${tag}`, {
+            params: {
+              q: this.query,
+            },
+          });
+          this.recipes = this.filterRecipe(resp.data);
+        } finally {
+          this.loading = false;
+        }
+        return;
+      }
+
+      this.loading = true;
+      try {
+        const resp = await axios.get("./api/search?", {
           params: {
             q: this.query,
           },
         });
         this.recipes = this.filterRecipe(resp.data);
-        return;
+      } finally {
+        this.loading = false;
       }
-
-      const resp = await axios.get("./api/search?", {
-        params: {
-          q: this.query,
-        },
-      });
-      this.recipes = this.filterRecipe(resp.data);
     },
     async random() {
-      const resp = await axios.get("./api/random");
-      return this.filterRecipe(resp.data);
+      this.loading = true;
+      try {
+        const resp = await axios.get("./api/random");
+        return this.filterRecipe(resp.data);
+      } finally {
+        this.loading = false;
+      }
     },
     filterRecipe(recipe) {
       recipe.forEach((recipe) => {
@@ -112,6 +124,4 @@ export default {
 };
 </script>
 
-
-<style scoped>
-</style>
+<style scoped></style>
