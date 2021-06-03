@@ -2,6 +2,7 @@ import Vue from "vue";
 import VueRouter, { RouteConfig } from "vue-router";
 import SearchPage from "@/views/SearchPage.vue";
 import RecipePage from "@/views/RecipePage.vue";
+import ImportPage from "@/views/ImportPage.vue";
 
 Vue.use(VueRouter);
 
@@ -16,6 +17,11 @@ const routes: Array<RouteConfig> = [
     path: "/recipes/:recipeId",
     name: "RecipePage",
     component: RecipePage,
+  },
+  {
+    path: "/import",
+    name: "ImportPage",
+    component: ImportPage,
   },
   {
     path: "/tags/:q",

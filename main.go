@@ -86,7 +86,12 @@ func (a *App) parseRecipes() cli.Command {
 				log.Printf("Parse recipe: file=%s", file.Name())
 				inputRecipeDir := filepath.Join(inputDir, file.Name())
 				indexFile := filepath.Join(inputRecipeDir, "index.html")
-				err := a.storage.ImportRecipeHTML(indexFile)
+				f, err := os.Open(indexFile)
+				if err != nil {
+					return err
+				}
+				defer f.Close()
+				_, err = a.storage.ImportRecipeHTML(f)
 				if err != nil {
 					return err
 				}

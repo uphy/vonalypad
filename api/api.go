@@ -8,6 +8,7 @@ import (
 	"github.com/uphy/vonalypad/pkg/recipe"
 
 	"github.com/labstack/echo"
+	"github.com/labstack/gommon/log"
 )
 
 type API struct {
@@ -24,6 +25,10 @@ type NoteRequest struct {
 	Note string `json:"note"`
 }
 
+type ImportRequest struct {
+	URL string `json:"url"`
+}
+
 func New(storage *recipe.RecipeStorage, tagStorage *recipe.TagStorage, staticDir string) *API {
 	app := echo.New()
 	a := &API{storage, tagStorage, app}
@@ -36,6 +41,7 @@ func New(storage *recipe.RecipeStorage, tagStorage *recipe.TagStorage, staticDir
 	app.PUT("/api/recipes/:id/note", a.SetNote)
 	app.POST("/api/recipes/:id/add-tag", a.AddTag)
 	app.POST("/api/recipes/:id/remove-tag", a.RemoveTag)
+	app.POST("/api/recipes/import", a.ImportURL)
 	app.GET("/api/tags/", a.GetTags)
 	app.GET("/api/tags/:id", a.GetRecipesByTagID)
 	app.Static("/", staticDir)
@@ -172,6 +178,20 @@ func (a *API) SearchRandom(ctx echo.Context) error {
 		return echo.NewHTTPError(500, fmt.Errorf("failed to search random: %w", err))
 	}
 	return ctx.JSON(200, result)
+}
+
+func (a *API) ImportURL(ctx echo.Context) error {
+	var req ImportRequest
+	if err := ctx.Bind(&req); err != nil {
+		log.Error(err)
+		return err
+	}
+	recipe, err := a.storage.ImportRecipeURL(req.URL)
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+	return ctx.JSON(200, recipe)
 }
 
 func (a *API) Start(port int) error {

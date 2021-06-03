@@ -3,9 +3,11 @@ package recipe
 import (
 	"encoding/json"
 	"errors"
+	"io"
 	"io/ioutil"
 	"math"
 	"math/rand"
+	"net/http"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -184,22 +186,32 @@ func (s *RecipeStorage) loadFile(file string) (*Recipe, error) {
 	return &r, nil
 }
 
-func (s *RecipeStorage) ImportRecipeHTML(file string) error {
-	r, err := parseRecipeHTML(file)
+func (s *RecipeStorage) ImportRecipeURL(u string) (*Recipe, error) {
+	resp, err := http.Get(u)
 	if err != nil {
-		return err
+		return nil, err
+	}
+	defer resp.Body.Close()
+	return s.ImportRecipeHTML(resp.Body)
+}
+
+func (s *RecipeStorage) ImportRecipeHTML(re io.Reader) (*Recipe, error) {
+	r, err := parseRecipeHTML(re)
+	if err != nil {
+		return nil, err
 	}
 	b, err := json.Marshal(r)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	dir := filepath.Join(s.Dir, r.ID)
 	os.MkdirAll(dir, 0777)
 	dest := filepath.Join(dir, "data.json")
 	if err := ioutil.WriteFile(dest, b, 0777); err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	s.Recipes = nil
+	return r, nil
 }
 
 func (s *RecipeStorage) SetNote(recipeID string, note string) error {
@@ -230,17 +242,22 @@ func (s *RecipeStorage) GetNote(recipeID string) (string, error) {
 	return string(b), nil
 }
 
-func parseRecipeHTML(file string) (*Recipe, error) {
+func parseRecipeHTMLFile(file string) (*Recipe, error) {
 	f, err := os.Open(file)
 	if err != nil {
 		return nil, err
 	}
 	defer f.Close()
-	doc, err := goquery.NewDocumentFromReader(f)
+	return parseRecipeHTML(f)
+}
+
+func parseRecipeHTML(r io.Reader) (*Recipe, error) {
+	doc, err := goquery.NewDocumentFromReader(r)
 	if err != nil {
 		return nil, err
 	}
-	id := regexp.MustCompile(`.*/(\d+)/.*`).FindStringSubmatch(file)
+	url, _ := doc.Find("meta[property='og:url']").Attr("content")
+	id := regexp.MustCompile(`.*/(\d+)/?`).FindStringSubmatch(url)
 	title := doc.Find("#recipe-title>h1").Text()
 	image, _ := doc.Find("#main-photo>img").Attr("src")
 	description, _ := doc.Find("meta[property='og:description']").Attr("content")
